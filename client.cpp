@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <string>
 
+using std::cin;
+
 int main() {
 
     // 创建socket
@@ -18,7 +20,7 @@ int main() {
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(""); // ip
+    server_addr.sin_addr.s_addr = inet_addr("10.91.215.144"); // ip
     server_addr.sin_port = htons(6789); // port
 
     // 连接服务端
@@ -35,13 +37,15 @@ int main() {
         printf("继续输入1，退出输出2，请输入：");
         int choice;
         scanf("%d", &choice);
+        getchar();
         if (1 == choice) {
             // 发送
             memset(buffer, 0, sizeof(buffer));
-            std::cin.getline(buffer, 1024);
+            cin.getline(buffer, 1024);
             ret = send(clientfd, buffer, strlen(buffer), 0);
             if (ret <= 0) {
                 printf("send error\n");
+                break;
             } else {
                 printf("发送成功，发送内容：%s\n", buffer);
             }
@@ -50,7 +54,10 @@ int main() {
             memset(buffer, 0, sizeof(buffer));
             ret = recv(clientfd, buffer, sizeof(buffer), 0);
             if (ret <= 0) {
-                printf("");
+                printf("recv error\n");
+                break;
+            } else {
+                printf("接收内容：%s\n", buffer);
             }
 
         } else if (2 == choice) {
