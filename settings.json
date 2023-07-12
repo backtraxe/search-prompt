@@ -1,0 +1,215 @@
+{
+    "editor.fontSize": 16,
+    "debug.console.fontSize": 14,
+    "terminal.integrated.fontSize": 14,
+    "files.trimTrailingWhitespace": true,
+    "files.trimFinalNewlines": true,
+    /*********
+     * C_Cpp *
+     *********/
+    "C_Cpp.intelliSenseEngine": "Disabled",
+    /**********
+     * clangd *
+     **********/
+    "clangd.onConfigChanged": "restart",
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/build",
+        "--clang-tidy",
+        "--clang-tidy-checks=cppcoreguidelines-*,performance-*,bugprone-*,portability-*,modernize-*,google-*",
+        "--log=verbose",
+        "--pretty",
+        "--header-insertion=iwyu",
+        "--fallback-style={BasedOnStyle: LLVM, IndentWidth: 4}",
+        "-j=12",
+        "--all-scopes-completion",
+        "--background-index",
+        "--completion-style=bundled",
+        "--header-insertion-decorators",
+        "--pch-storage=memory",
+        "--ranking-model=heuristics",
+        "--enable-config",
+    ],
+    "clangd.fallbackFlags": [
+        "-std=c++11"
+    ],
+    "clangd.checkUpdates": true,
+    /*********
+     * cmake *
+     *********/
+    "cmake.configureOnOpen": true,
+    /********
+     * lldb *
+     ********/
+    // LLDB 指令自动补全
+    "lldb.commandCompletions": true,
+    // LLDB 指针显示解引用内容
+    "lldb.dereferencePointers": true,
+    // LLDB 鼠标悬停在变量上时预览变量值
+    "lldb.evaluateForHovers": true,
+    // LLDB 监视表达式的默认类型
+    "lldb.launch.expressions": "simple",
+    // LLDB 不显示汇编代码
+    "lldb.showDisassembly": "never",
+    // LLDB 生成更详细的日志
+    "lldb.verboseLogging": true,
+    /***************
+     * code-runner *
+     ***************/
+    // Code Runner 执行命令，考虑到一致性，可执行文件输出到build文件夹中，命名为debug
+    "code-runner.executorMap": {
+        "cpp": "cd $dir && clang++ $fileName -pedantic -Wall -Wextra -pthread -fuse-ld=lld -fsanitize=address -fsanitize=undefined -stdlib=libc++ -std=c++11 --target=x86_64-w64-mingw -o $workspaceRoot\\build\\test && $workspaceRoot\\build\\test"
+    },
+    // Code Runner 在终端中运行
+    "code-runner.runInTerminal": true,
+    /*******************
+     * better-comments *
+     *******************/
+    "better-comments.highlightPlainText": true,
+    "better-comments.multilineComments": true,
+    "better-comments.tags": [
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#DC143C",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "bug:",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#DC143C",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "\\$",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#008000",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "done:",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#008000",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "\\;",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#4169E1",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "fixme:",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#4169E1",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "\\%",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#DEB887",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "note:",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#DEB887",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "\\]",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#FFD700",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "star:",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#FFD700",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "\\*",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#FF2C00",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "alert:",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#FF2C00",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "\\!",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#3498DB",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "question:",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#3498DB",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "\\?",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#FF8C00",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "todo:",
+            "underline": false
+        },
+        {
+            "backgroundColor": "transparent",
+            "bold": false,
+            "color": "#FF8C00",
+            "italic": false,
+            "strikethrough": false,
+            "tag": "\\>",
+            "underline": false
+        }
+    ],
+}

@@ -30,6 +30,28 @@ void Trie::traverse(const TrieNode *cur, string &word, vector<string> &dict) {
     }
 }
 
+void Trie::remove(const string &word) {
+    auto cur = root;
+    for (auto c : word) {
+        if (!cur->next[c]) {
+            return;
+        }
+        cur = cur->next[c];
+    }
+    cur->is_end = false;
+}
+
+bool Trie::has(const string &word) const {
+    auto cur = root;
+    for (auto c : word) {
+        if (!cur->next[c]) {
+            return false;
+        }
+        cur = cur->next[c];
+    }
+    return cur->is_end;
+}
+
 vector<string> Trie::prompt(const string &word) {
     vector<string> dict;
     auto cur = root;

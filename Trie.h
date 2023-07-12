@@ -26,6 +26,13 @@ class Trie {
     // word：待添加单词
     void insert(const string &word);
 
+    // 从字典树中删除单词。
+    // word：待删除单词
+    void remove(const string &word);
+
+    // 查询字典树中是否存在给定单词
+    bool has(const string &word) const;
+
     // 根据前缀词给出提示候选词。
     // word：前缀单词
     // 返回：候选词数组
