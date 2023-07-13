@@ -1,28 +1,28 @@
-#include <cstring>
-#include <sys/socket.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #include <unistd.h>
-#include <thread>
-#include <iostream>
-#include <cstdio>
-#include <string>
-#include <cstring>
-#include <fstream>
-#include <deque>
-#include <mutex>
+
 #include <condition_variable>
+#include <cstdio>
+#include <cstring>
+#include <deque>
+#include <fstream>
+#include <iostream>
+#include <mutex>
+#include <string>
+#include <thread>
 
-#include "Trie.h"
+#include "Trie.hpp"
 
+using std::condition_variable;
+using std::cout;
+using std::deque;
 using std::ifstream;
 using std::ios;
-using std::cout;
-using std::thread;
-using std::deque;
-using std::mutex;
 using std::lock_guard;
+using std::mutex;
+using std::thread;
 using std::unique_lock;
-using std::condition_variable;
 
 // socket的详细信息
 struct SocketData {
@@ -62,7 +62,7 @@ void load_dict(Trie &trie) {
     }
     string line;
     while (getline(ifs, line)) {
-        trie.insert(line);
+        trie.insert(line, 0);
     }
     ifs.close();
 }
@@ -127,7 +127,8 @@ void load_dict(Trie &trie) {
 
 //         // 关闭连接
 //         close(clientfd);
-//         cout << "客户端 " << inet_ntoa(client_addr.sin_addr) << " 已断开连接\n";
+//         cout << "客户端 " << inet_ntoa(client_addr.sin_addr) << "
+//         已断开连接\n";
 //     }
 // }
 
@@ -143,7 +144,8 @@ void worker(int clientfd, struct sockaddr_in *client_addr, Trie *trie) {
             cout << "recv error\n";
             break;
         } else {
-            cout << "接收成功，接收客户端 " << inet_ntoa(client_addr->sin_addr) << " 发送的内容：" << buffer << "\n";
+            cout << "接收成功，接收客户端 " << inet_ntoa(client_addr->sin_addr)
+                 << " 发送的内容：" << buffer << "\n";
         }
 
         // 字典树查询候选词
@@ -168,7 +170,8 @@ void worker(int clientfd, struct sockaddr_in *client_addr, Trie *trie) {
             cout << "send error\n";
             break;
         } else {
-            cout << "发送成功，向客户端 " << inet_ntoa(client_addr->sin_addr) << " 发送内容：" << buffer << "\n";
+            cout << "发送成功，向客户端 " << inet_ntoa(client_addr->sin_addr)
+                 << " 发送内容：" << buffer << "\n";
         }
     }
 
@@ -178,7 +181,6 @@ void worker(int clientfd, struct sockaddr_in *client_addr, Trie *trie) {
 }
 
 int main() {
-
     cout << "服务器运行中\n";
 
     // 读取配置文件
@@ -195,11 +197,12 @@ int main() {
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(params["ip"].c_str()); // ip
-    server_addr.sin_port = htons(stoi(params["port"])); // port
+    server_addr.sin_addr.s_addr = inet_addr(params["ip"].c_str());  // ip
+    server_addr.sin_port = htons(stoi(params["port"]));             // port
 
     // 绑定地址
-    int ret = bind(serverfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    int ret =
+        bind(serverfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
     if (0 != ret) {
         cout << "bind error\n";
         return -1;
@@ -207,7 +210,7 @@ int main() {
 
     // 监听请求
     ret = listen(serverfd, 5);
-    if(0 != ret) {
+    if (0 != ret) {
         cout << "listen error\n";
         close(serverfd);
         return -1;
@@ -231,7 +234,8 @@ int main() {
         // 建立连接
         int socklen = sizeof(struct sockaddr_in);
         struct sockaddr_in client_addr;
-        int clientfd = accept(serverfd, (struct sockaddr*)&client_addr, (socklen_t *)&socklen);
+        int clientfd = accept(serverfd, (struct sockaddr *)&client_addr,
+                              (socklen_t *)&socklen);
         if (-1 == clientfd) {
             cout << "accept error\n";
             continue;

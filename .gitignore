@@ -1,2 +1,12 @@
+# 中间文件
 .cache
 build
+
+# 可执行文件
+client
+server
+trieTest
+
+# 数据文件
+data.json
+hourly_smartbox_json.2023071200
