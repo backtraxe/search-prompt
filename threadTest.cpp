@@ -6,6 +6,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <functional>
 
 using namespace std;
 
@@ -91,7 +92,10 @@ class TaskPool final {
             spTask->doIt();
             spTask.reset();
         }
-        cout << "thread " << this_thread::get_id() << " exit\n";
+        {
+            unique_lock<mutex> guard(m_mutex);
+            cout << "thread " << this_thread::get_id() << " exit\n";
+        }
     }
 
     list<shared_ptr<Task>> m_taskList;

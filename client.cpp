@@ -36,7 +36,6 @@ unordered_map<string, string> load_config() {
 }
 
 int main() {
-
     cout << "客户端运行中\n";
 
     // 读取配置文件
@@ -45,22 +44,20 @@ int main() {
     // 创建socket
     int clientfd = socket(AF_INET, SOCK_STREAM, 0);
     if (-1 == clientfd) {
-        cout << "socket error\n";
+        cout << "create socket error\n";
         return -1;
     }
 
     // 指定服务端ip和端口
     struct sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = inet_addr(params["ip"].c_str()); // ip
     server_addr.sin_port = htons(stoi(params["port"])); // port
 
     // 连接服务端
     int ret = connect(clientfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-    if (0 != ret) {
+    if (-1 == ret) {
         cout << "connect error\n";
-        close(clientfd);
         return -1;
     }
 
@@ -79,7 +76,7 @@ int main() {
             ret = send(clientfd, buffer, strlen(buffer), 0);
             if (ret <= 0) {
                 cout << "send error\n";
-                break;
+                continue;
             } else {
                 cout << "发送成功，发送内容：" << buffer << "\n";
             }
@@ -89,7 +86,7 @@ int main() {
             ret = recv(clientfd, buffer, sizeof(buffer), 0);
             if (ret < 0) {
                 cout << "recv error\n";
-                break;
+                continue;
             } else {
                 cout << "接收成功，接收内容：" << buffer << "\n";
             }

@@ -28,13 +28,17 @@ bool Trie::insert(const string &word, const double weight) const {
     return true;
 }
 
-void Trie::traverse(const TrieNode *cur, string &word, vector<string> &dict) {
+void Trie::traverse(const TrieNode *cur, string &word, priority_queue<pair<double, string>> &min_heap, const int prompt_num) {
     for (auto &p : cur->next) {
         word.push_back(p.first);
         if (p.second->is_end) {
-            dict.push_back(word);
+            // 负权重（最小堆）、字符串
+            min_heap.emplace(-p.second->weight, word);
+            if (min_heap.size() > prompt_num) {
+                min_heap.pop();
+            }
         }
-        traverse(p.second, word, dict);
+        traverse(p.second, word, min_heap, prompt_num);
         word.pop_back();
     }
 }
@@ -62,24 +66,44 @@ bool Trie::has(const string &word) const {
     return cur->is_end;
 }
 
-vector<string> Trie::prompt(const string &word) {
-    vector<string> dict;
+/**
+ * @brief
+ *
+ * @param word
+ * @param prompt_num
+ * @return deque<string>
+ */
+deque<string> Trie::prompt(const string &word, const int prompt_num) {
+    // 权重变为负数，将大顶堆转为小顶堆
+    priority_queue<pair<double, string>> min_heap;
+    deque<string> ret;
     auto cur = root;
     string prefix;
     for (auto c : word) {
+        // 不是前缀，返回空
         if (cur->next.count(c) == 0) {
-            return dict;
+            return ret;
         }
         cur = cur->next[c];
         prefix.push_back(c);
     }
     if (cur->is_end) {
-        dict.push_back(prefix);
+        min_heap.emplace(-cur->weight, word);
     }
-    traverse(cur, prefix, dict);
-    return dict;
+    traverse(cur, prefix, min_heap, prompt_num);
+    // 按权重降序排列
+    while (!min_heap.empty()) {
+        ret.emplace_front(min_heap.top().second);
+        min_heap.pop();
+    }
+    return ret;
 }
 
+/**
+ * @brief
+ *
+ * @param cur
+ */
 void Trie::deleteTrie(TrieNode *cur) {
     if (cur) {
         for (auto &p : cur->next) {

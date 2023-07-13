@@ -1,10 +1,14 @@
 #include <string>
 #include <unordered_map>
-#include <vector>
+#include <deque>
+#include <queue>
+#include <utility>
 
 using std::string;
 using std::unordered_map;
-using std::vector;
+using std::deque;
+using std::priority_queue;
+using std::pair;
 
 class Trie {
     /**
@@ -56,14 +60,14 @@ class Trie {
     // 根据前缀词给出提示候选词。
     // word：前缀单词
     // 返回：候选词数组
-    vector<string> prompt(const string &word);
+    deque<string> prompt(const string &word, const int prompt_num);
 
    private:
     // 在字典树中遍历以当前结点为根结点的整棵树，将树中存在的单词加入到候选数组中
     // cur：当前结点
     // word：到当前结点时的单词
     // dict：候选词数组
-    void traverse(const TrieNode *cur, string &word, vector<string> &dict);
+    void traverse(const TrieNode *cur, string &word, priority_queue<pair<double, string>> &min_heap, const int prompt_num);
 
     // 删除以当前结点为根结点的整棵字典树
     void deleteTrie(TrieNode *cur);

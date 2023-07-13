@@ -52,6 +52,11 @@ unordered_map<string, string> load_config() {
     return params;
 }
 
+// 读取配置文件
+auto params = load_config();
+mutex mtx; // 互斥信号量
+condition_variable cond_var; // 条件变量
+
 // 从 dict.txt 中导入词语
 void load_dict(Trie &trie) {
     ifstream ifs;
@@ -62,75 +67,77 @@ void load_dict(Trie &trie) {
     }
     string line;
     while (getline(ifs, line)) {
-        trie.insert(line, 0);
+        int idx = line.rfind(' ');
+        string word = line.substr(0, idx);
+        double weight = stod(line.substr(idx + 1, line.length() - idx - 1));
+        trie.insert(word, weight);
     }
     ifs.close();
 }
 
 // 每个线程的任务
-// void worker(mutex *mtx,
-//             condition_variable *cond_var,
-//             deque<SocketData> *wait_queue,
-//             Trie *trie) {
+void worker(mutex *mtx,
+            condition_variable *cond_var,
+            deque<SocketData> *wait_queue,
+            Trie *trie) {
 
-//     char buffer[1024];
-//     int ret;
+    char buffer[1024];
+    int ret;
 
-//     while (true) {
-//         unique_lock<mutex> lock(*mtx);
-//         while (wait_queue->empty()) {
-//             cond_var->wait(lock);
-//         }
-//         SocketData socket = wait_queue->front();
-//         wait_queue->pop_front();
+    while (true) {
+        unique_lock<mutex> lock(*mtx);
+        while (wait_queue->empty()) {
+            cond_var->wait(lock);
+        }
+        SocketData socket = wait_queue->front();
+        wait_queue->pop_front();
 
-//         int clientfd = socket.fd;
-//         struct sockaddr_in client_addr = socket.addr;
+        int clientfd = socket.fd;
+        struct sockaddr_in client_addr = socket.addr;
 
-//         // 数据交互
-//         while (true) {
-//             // 接收
-//             memset(buffer, 0, sizeof(buffer));
-//             ret = recv(clientfd, buffer, sizeof(buffer), 0);
-//             if (ret <= 0) {
-//                 cout << "recv error\n";
-//                 break;
-//             } else {
-//                 cout << "接收成功，接收内容：" << buffer << "\n";
-//             }
+        // 数据交互
+        while (true) {
+            // 接收
+            memset(buffer, 0, sizeof(buffer));
+            ret = recv(clientfd, buffer, sizeof(buffer), 0);
+            if (ret <= 0) {
+                cout << "recv error\n";
+                break;
+            } else {
+                cout << "接收成功，接收内容：" << buffer << "\n";
+            }
 
-//             // 字典树查询候选词
-//             string tmp_str = buffer;
-//             vector<string> dict = trie->prompt(tmp_str);
+            // 字典树查询候选词
+            string tmp_str = buffer;
+            auto dict = trie->prompt(tmp_str, stoi(params["prompt_num"]));
 
-//             // 发送
-//             memset(buffer, 0, sizeof(buffer));
-//             tmp_str = "";
-//             for (auto word : dict) {
-//                 tmp_str += word;
-//                 tmp_str.push_back(',');
-//             }
-//             if (!tmp_str.empty()) {
-//                 tmp_str.pop_back();
-//             } else {
-//                 tmp_str = " ";
-//             }
-//             strncpy(buffer, tmp_str.c_str(), tmp_str.length() + 1);
-//             ret = send(clientfd, buffer, strlen(buffer), 0);
-//             if (ret < 0) {
-//                 cout << "send error\n";
-//                 break;
-//             } else {
-//                 cout << "发送成功，发送内容：" << buffer << "\n";
-//             }
-//         }
+            // 发送
+            memset(buffer, 0, sizeof(buffer));
+            tmp_str = "";
+            for (auto word : dict) {
+                tmp_str += word;
+                tmp_str.push_back(',');
+            }
+            if (!tmp_str.empty()) {
+                tmp_str.pop_back();
+            } else {
+                tmp_str = " ";
+            }
+            strncpy(buffer, tmp_str.c_str(), tmp_str.length() + 1);
+            ret = send(clientfd, buffer, strlen(buffer), 0);
+            if (ret < 0) {
+                cout << "send error\n";
+                break;
+            } else {
+                cout << "发送成功，发送内容：" << buffer << "\n";
+            }
+        }
 
-//         // 关闭连接
-//         close(clientfd);
-//         cout << "客户端 " << inet_ntoa(client_addr.sin_addr) << "
-//         已断开连接\n";
-//     }
-// }
+        // 关闭连接
+        close(clientfd);
+        cout << "客户端 " << inet_ntoa(client_addr.sin_addr) << " 已断开连接\n";
+    }
+}
 
 void worker(int clientfd, struct sockaddr_in *client_addr, Trie *trie) {
     // 数据交互
@@ -150,9 +157,9 @@ void worker(int clientfd, struct sockaddr_in *client_addr, Trie *trie) {
 
         // 字典树查询候选词
         string tmp_str = buffer;
-        vector<string> dict = trie->prompt(tmp_str);
+        auto dict = trie->prompt(tmp_str, stoi(params["prompt_num"]));
         tmp_str = "";
-        for (auto word : dict) {
+        for (auto &word : dict) {
             tmp_str += word;
             tmp_str.push_back(',');
         }
@@ -180,11 +187,10 @@ void worker(int clientfd, struct sockaddr_in *client_addr, Trie *trie) {
     cout << "客户端 " << inet_ntoa(client_addr->sin_addr) << " 已断开连接\n";
 }
 
+
+
 int main() {
     cout << "服务器运行中\n";
-
-    // 读取配置文件
-    auto params = load_config();
 
     // 创建socket
     int listenfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -219,14 +225,12 @@ int main() {
     load_dict(trie);
 
     // 连接池初始化
-    // int MAX_THREAD = stoi(params["max_thread"]);
-    // thread threads[MAX_THREAD]; // 线程池
-    // mutex mtx; // 互斥信号量
-    // condition_variable cond_var; // 条件变量
-    // deque<SocketData> wait_queue; // 等待队列
-    // for (int i = 0; i < MAX_THREAD; i++) {
-    //     threads[i] = thread(worker, &mtx, &cond_var, &wait_queue, &trie);
-    // }
+    int MAX_THREAD = stoi(params["thread_num"]);
+    thread threads[MAX_THREAD]; // 线程池
+    deque<SocketData> wait_queue; // 等待队列
+    for (int i = 0; i < MAX_THREAD; i++) {
+        threads[i] = thread(worker, &mtx, &cond_var, &wait_queue, &trie);
+    }
 
     while (true) {
         // 建立连接
@@ -240,14 +244,14 @@ int main() {
         } else {
             cout << "客户端 " << inet_ntoa(client_addr.sin_addr) << " 已连接\n";
             // 加锁，然后添加到任务队列
-            // lock_guard<mutex> lock(mtx);
-            // SocketData socket(clientfd, client_addr);
-            // wait_queue.push_back(socket);
-            // cond_var.notify_one();
+            lock_guard<mutex> lock(mtx);
+            SocketData socket(clientfd, client_addr);
+            wait_queue.push_back(socket);
+            cond_var.notify_one();
         }
 
-        thread t(worker, clientfd, &client_addr, &trie);
-        t.detach();
+        // thread t(worker, clientfd, &client_addr, &trie);
+        // t.detach();
     }
 
     // 关闭监听
