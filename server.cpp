@@ -137,7 +137,7 @@ void worker(int clientfd, struct sockaddr_in *client_addr, Trie *trie) {
     char buffer[1024];
     int ret;
     while (true) {
-        // 接收
+        // 从客户端接收数据
         memset(buffer, 0, sizeof(buffer));
         ret = recv(clientfd, buffer, sizeof(buffer), 0);
         if (ret <= 0) {
@@ -151,9 +151,6 @@ void worker(int clientfd, struct sockaddr_in *client_addr, Trie *trie) {
         // 字典树查询候选词
         string tmp_str = buffer;
         vector<string> dict = trie->prompt(tmp_str);
-
-        // 发送
-        memset(buffer, 0, sizeof(buffer));
         tmp_str = "";
         for (auto word : dict) {
             tmp_str += word;
@@ -164,6 +161,9 @@ void worker(int clientfd, struct sockaddr_in *client_addr, Trie *trie) {
         } else {
             tmp_str = " ";
         }
+
+        // 向客户端发送数据
+        memset(buffer, 0, sizeof(buffer));
         strncpy(buffer, tmp_str.c_str(), tmp_str.length() + 1);
         ret = send(clientfd, buffer, strlen(buffer), 0);
         if (ret < 0) {
@@ -187,32 +187,30 @@ int main() {
     auto params = load_config();
 
     // 创建socket
-    int serverfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (-1 == serverfd) {
-        cout << "socket error\n";
+    int listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (-1 == listenfd) {
+        cout << "create socket error\n";
         return -1;
     }
 
-    // 指定服务端ip和端口
+    // 初始化服务器地址
     struct sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = inet_addr(params["ip"].c_str());  // ip
     server_addr.sin_port = htons(stoi(params["port"]));             // port
 
     // 绑定地址
     int ret =
-        bind(serverfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-    if (0 != ret) {
+        bind(listenfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    if (-1 == ret) {
         cout << "bind error\n";
         return -1;
     }
 
     // 监听请求
-    ret = listen(serverfd, 5);
-    if (0 != ret) {
+    ret = listen(listenfd, SOMAXCONN);
+    if (-1 == ret) {
         cout << "listen error\n";
-        close(serverfd);
         return -1;
     }
 
@@ -232,10 +230,10 @@ int main() {
 
     while (true) {
         // 建立连接
-        int socklen = sizeof(struct sockaddr_in);
         struct sockaddr_in client_addr;
-        int clientfd = accept(serverfd, (struct sockaddr *)&client_addr,
-                              (socklen_t *)&socklen);
+        socklen_t socklen = sizeof(client_addr);
+        int clientfd =
+            accept(listenfd, (struct sockaddr *)&client_addr, &socklen);
         if (-1 == clientfd) {
             cout << "accept error\n";
             continue;
@@ -252,8 +250,8 @@ int main() {
         t.detach();
     }
 
-    // 关闭连接
-    close(serverfd);
+    // 关闭监听
+    close(listenfd);
 
     return 0;
 }
