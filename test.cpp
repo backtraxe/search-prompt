@@ -1,19 +1,13 @@
-#include <ctime>
-#include <fstream>
 #include <iostream>
-#include <vector>
 
+#include "Utility.hpp"
 using namespace std;
 
 int main() {
-  ifstream ifs("hourly_smartbox_json.2023071200");
-  string line;
-  int count = 0;
-  while (getline(ifs, line)) {
-    count++;
-  }
-  cout << count << "\n";
-  ifs.close();
+    auto file = Utility::read_file("dict.txt");
+    for (auto &line : file) {
+        cout << line << endl;
+    }
 
-  return 0;
+    return 0;
 }

@@ -1,8 +1,36 @@
----
-BasedOnStyle: Google
-IndentWidth: 4
----
+# 语言
 Language: Cpp
-# Force pointers to the type for C++.
+
+BasedOnStyle: LLVM
+
+# tab宽度
+TabWidth: 4
+
+# 缩进宽度
+IndentWidth: 4
+
 DerivePointerAlignment: false
+
+# 指针和引用的对齐: Left, Right, Middle
 PointerAlignment: Right
+
+# 连续赋值时，对齐所有等号
+AlignConsecutiveAssignments: false
+
+# 连续声明时，对齐所有声明的变量名
+AlignConsecutiveDeclarations: false
+
+# 对齐连续的尾随的注释
+AlignTrailingComments: true
+
+# 允许排序#include
+SortIncludes: true
+
+# 允许排序 using 声明顺序
+SortUsingDeclarations: true
+
+# 标准: Cpp03, Cpp11, Auto
+Standard: Cpp11
+
+# 使用tab字符: Never, ForIndentation, ForContinuationAndIndentation, Always
+UseTab: Never

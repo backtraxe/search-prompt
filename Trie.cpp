@@ -28,7 +28,9 @@ bool Trie::insert(const string &word, const double weight) const {
     return true;
 }
 
-void Trie::traverse(const TrieNode *cur, string &word, priority_queue<pair<double, string>> &min_heap, const int prompt_num) {
+void Trie::traverse(const TrieNode *cur, string &word,
+                    priority_queue<pair<double, string>> &min_heap,
+                    const int prompt_num) {
     for (auto &p : cur->next) {
         word.push_back(p.first);
         if (p.second->is_end) {

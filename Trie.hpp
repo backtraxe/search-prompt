@@ -1,14 +1,14 @@
-#include <string>
-#include <unordered_map>
 #include <deque>
 #include <queue>
+#include <string>
+#include <unordered_map>
 #include <utility>
 
+using std::deque;
+using std::pair;
+using std::priority_queue;
 using std::string;
 using std::unordered_map;
-using std::deque;
-using std::priority_queue;
-using std::pair;
 
 class Trie {
     /**
@@ -19,12 +19,12 @@ class Trie {
         TrieNode(const char v, const double w)
             : val(v), weight(w), is_end(false) {}
         char val;
-        double weight;  // 权重
+        double weight; // 权重
         bool is_end;
         unordered_map<char, TrieNode *> next;
     };
 
-   public:
+  public:
     Trie();
 
     ~Trie();
@@ -62,12 +62,14 @@ class Trie {
     // 返回：候选词数组
     deque<string> prompt(const string &word, const int prompt_num);
 
-   private:
+  private:
     // 在字典树中遍历以当前结点为根结点的整棵树，将树中存在的单词加入到候选数组中
     // cur：当前结点
     // word：到当前结点时的单词
     // dict：候选词数组
-    void traverse(const TrieNode *cur, string &word, priority_queue<pair<double, string>> &min_heap, const int prompt_num);
+    void traverse(const TrieNode *cur, string &word,
+                  priority_queue<pair<double, string>> &min_heap,
+                  const int prompt_num);
 
     // 删除以当前结点为根结点的整棵字典树
     void deleteTrie(TrieNode *cur);
