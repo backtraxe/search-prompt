@@ -34,7 +34,7 @@ void Trie::traverse(const TrieNode *cur, string &word, priority_queue<pair<doubl
         if (p.second->is_end) {
             // 负权重（最小堆）、字符串
             min_heap.emplace(-p.second->weight, word);
-            if (min_heap.size() > prompt_num) {
+            if ((int)min_heap.size() > prompt_num) {
                 min_heap.pop();
             }
         }

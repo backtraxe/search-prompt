@@ -27,7 +27,7 @@
         "--header-insertion-decorators",
         "--pch-storage=memory",
         "--ranking-model=heuristics",
-        "--enable-config",
+        "--enable-config"
     ],
     "clangd.fallbackFlags": [
         "-std=c++11"
@@ -211,5 +211,5 @@
             "tag": "\\>",
             "underline": false
         }
-    ],
+    ]
 }
