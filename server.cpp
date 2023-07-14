@@ -15,6 +15,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <functional>
 
 #include "Trie.hpp"
 #include "rapidjson/document.h"
