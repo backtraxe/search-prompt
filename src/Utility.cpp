@@ -10,11 +10,11 @@
  * @param filepath 文件路径
  * @return std::vector<std::string>
  */
-std::vector<std::string> Utility::read_file(const char *filepath) {
+std::vector<std::string> Utility::readFile(const char *filePath) {
     std::vector<std::string> file;
     int count = 0;
     auto start_time = clock();
-    std::ifstream ifs(filepath);
+    std::ifstream ifs(filePath);
     std::string line;
     while (std::getline(ifs, line)) {
         file.push_back(line);
@@ -26,16 +26,16 @@ std::vector<std::string> Utility::read_file(const char *filepath) {
 }
 
 /**
- * @brief 导入配置
+ * @brief 导入 config.conf 配置文件
  *
  * @return std::unordered_map<std::string, std::string>
  */
-std::unordered_map<std::string, std::string> Utility::load_config() {
+std::unordered_map<std::string, std::string> Utility::loadConfig() {
     std::unordered_map<std::string, std::string> params;
     std::ifstream ifs;
-    ifs.open("config.conf");
+    ifs.open("../config.conf");
     if (!ifs.is_open()) {
-        std::cout << "load config error\n";
+        std::cerr << "导入配置文件失败\n";
         return params;
     }
     std::string line;
@@ -49,19 +49,19 @@ std::unordered_map<std::string, std::string> Utility::load_config() {
     return params;
 }
 
-void load_dict(Trie &trie) {
-    ifstream ifs;
-    ifs.open("dict.txt", ios::in);
-    if (!ifs.is_open()) {
-        cout << "load dict error\n";
-        return;
-    }
-    string line;
-    while (getline(ifs, line)) {
-        int idx = line.rfind(' ');
-        string word = line.substr(0, idx);
-        double weight = stod(line.substr(idx + 1, line.length() - idx - 1));
-        trie.insert(word, weight);
-    }
-    ifs.close();
-}
+// void load_dict(Trie &trie) {
+//     std::ifstream ifs;
+//     ifs.open("dict.txt");
+//     if (!ifs.is_open()) {
+//         std::cout << "load dict error\n";
+//         return;
+//     }
+//     std::string line;
+//     while (getline(ifs, line)) {
+//         int idx = line.rfind(' ');
+//         std::string word = line.substr(0, idx);
+//         double weight = stod(line.substr(idx + 1, line.length() - idx - 1));
+//         trie.insert(word, weight);
+//     }
+//     ifs.close();
+// }

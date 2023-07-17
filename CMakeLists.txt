@@ -4,7 +4,7 @@ project(search-prompt VERSION 0.1.0 LANGUAGES C CXX)
 include(CTest)
 enable_testing()
 
-add_executable(search-prompt server.cpp Trie.cpp)
+add_executable(search-prompt src/Server.cpp src/Utility.cpp)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

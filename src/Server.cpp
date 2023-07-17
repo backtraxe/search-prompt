@@ -36,6 +36,8 @@ using std::thread;
 using std::unique_lock;
 using std::vector;
 
+class Server final {};
+
 /**
  * @brief 通过字符数组中的 json 数据建立 trie
  *

@@ -34,3 +34,6 @@ Standard: Cpp11
 
 # 使用tab字符: Never, ForIndentation, ForContinuationAndIndentation, Always
 UseTab: Never
+
+# template 后换行
+AlwaysBreakTemplateDeclarations: Yes
