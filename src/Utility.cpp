@@ -19,9 +19,10 @@ const std::vector<std::string> Utility::readFile(const char *filePath) {
     std::string line;
     while (std::getline(ifs, line)) {
         file.push_back(line);
+        count++;
     }
     auto end_time = clock();
-    std::cout << "读取 " << count << " 条数据，共耗时 "
+    std::cout << "读取 " << count << " 条数据耗时："
               << ((double)end_time - start_time) / CLOCKS_PER_SEC << "s\n";
     return file;
 }
@@ -34,7 +35,7 @@ const std::vector<std::string> Utility::readFile(const char *filePath) {
 const std::unordered_map<std::string, std::string> Utility::loadConfig() {
     std::unordered_map<std::string, std::string> params;
     std::ifstream ifs;
-    ifs.open("../config.conf");
+    ifs.open("config.conf");
     if (!ifs.is_open()) {
         std::cerr << "导入配置文件失败\n";
         return params;
@@ -61,6 +62,7 @@ Utility::json2vec(const std::vector<std::string> &json) {
     std::vector<std::pair<std::string, double>> dict;
     // json 解析器
     rapidjson::Document doc;
+    auto start_time = clock();
     for (auto &line : json) {
         doc.Parse(line.c_str());
         if (doc.HasMember("_k") && doc["_k"].IsString() &&
@@ -71,5 +73,8 @@ Utility::json2vec(const std::vector<std::string> &json) {
             }
         }
     }
+    auto end_time = clock();
+    std::cout << "提取json耗时："
+              << ((double)end_time - start_time) / CLOCKS_PER_SEC << "s\n";
     return dict;
 }

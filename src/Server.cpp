@@ -56,7 +56,7 @@ class Server final {
         // 读取数据
         auto start_time = clock();
         auto dict = Utility::json2vec(
-            Utility::readFile("../hourly_smartbox_json.2023071200"));
+            Utility::readFile("hourly_smartbox_json.2023071200"));
         auto end_time = clock();
         std::cout << "读取数据耗时："
                   << ((double)end_time - start_time) / CLOCKS_PER_SEC << "s\n";
