@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "Trie.hpp"
 
 Trie::Trie(const size_t shardNum) { root = new TrieNode('0', 0, shardNum); }
