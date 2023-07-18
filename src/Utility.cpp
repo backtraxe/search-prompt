@@ -3,6 +3,7 @@
 #include <string>
 
 #include "Utility.hpp"
+#include "rapidjson/document.h"
 
 /**
  * @brief 按行读取文件
@@ -10,7 +11,7 @@
  * @param filepath 文件路径
  * @return std::vector<std::string>
  */
-std::vector<std::string> Utility::readFile(const char *filePath) {
+const std::vector<std::string> Utility::readFile(const char *filePath) {
     std::vector<std::string> file;
     int count = 0;
     auto start_time = clock();
@@ -30,7 +31,7 @@ std::vector<std::string> Utility::readFile(const char *filePath) {
  *
  * @return std::unordered_map<std::string, std::string>
  */
-std::unordered_map<std::string, std::string> Utility::loadConfig() {
+const std::unordered_map<std::string, std::string> Utility::loadConfig() {
     std::unordered_map<std::string, std::string> params;
     std::ifstream ifs;
     ifs.open("../config.conf");
@@ -49,19 +50,26 @@ std::unordered_map<std::string, std::string> Utility::loadConfig() {
     return params;
 }
 
-// void load_dict(Trie &trie) {
-//     std::ifstream ifs;
-//     ifs.open("dict.txt");
-//     if (!ifs.is_open()) {
-//         std::cout << "load dict error\n";
-//         return;
-//     }
-//     std::string line;
-//     while (getline(ifs, line)) {
-//         int idx = line.rfind(' ');
-//         std::string word = line.substr(0, idx);
-//         double weight = stod(line.substr(idx + 1, line.length() - idx - 1));
-//         trie.insert(word, weight);
-//     }
-//     ifs.close();
-// }
+/**
+ * @brief 从 json 文件中提取字符串和权重
+ *
+ * @param json
+ * @return const std::vector<std::string, double> 字符串和权重
+ */
+const std::vector<std::pair<std::string, double>>
+Utility::json2vec(const std::vector<std::string> &json) {
+    std::vector<std::pair<std::string, double>> dict;
+    // json 解析器
+    rapidjson::Document doc;
+    for (auto &line : json) {
+        doc.Parse(line.c_str());
+        if (doc.HasMember("_k") && doc["_k"].IsString() &&
+            doc.HasMember("_s") && doc["_s"].IsObject()) {
+            auto &obj = doc["_s"];
+            if (obj.HasMember("0") && obj["0"].IsDouble()) {
+                dict.emplace_back(doc["_k"].GetString(), obj["0"].GetDouble());
+            }
+        }
+    }
+    return dict;
+}

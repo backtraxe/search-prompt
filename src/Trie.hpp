@@ -3,6 +3,7 @@
 #include <deque>
 #include <queue>
 #include <string>
+#include <unordered_map>
 #include <utility>
 
 #include "ConcurrentHashMap.hpp"
@@ -17,8 +18,8 @@ class Trie final {
      *
      */
     struct TrieNode {
-        TrieNode(const char v, const double w, const size_t num_shard = 128)
-            : val(v), weight(w), is_end(false), next(num_shard) {}
+        TrieNode(const char v, const double w, const size_t shardNum = 128)
+            : val(v), weight(w), is_end(false), next(shardNum) {}
 
         /**
          * @brief 当前字符。
@@ -55,8 +56,8 @@ class Trie final {
      * @param prompt_num 提示词数量。
      */
     void traverse(const TrieNode *cur, std::string &word,
-                  std::priority_queue<std::pair<double, std::string>> &min_heap,
-                  const int prompt_num);
+                  std::priority_queue<pds> &min_heap,
+                  const int prompt_num) const;
 
     /**
      * @brief 查找字符串最后字符所在的结点。
@@ -79,14 +80,8 @@ class Trie final {
      */
     TrieNode *root;
 
-    /**
-     * @brief 分片数量。
-     *
-     */
-    const size_t num_shard;
-
   public:
-    Trie(const size_t num_shard);
+    Trie(const size_t shardNum);
 
     ~Trie();
 
@@ -126,5 +121,12 @@ class Trie final {
      * @return std::deque<std::pair<double, std::string>>
      * 候选词数组，根据权重降序排列。
      */
-    std::deque<pds> prompt(const std::string &word, const int prompt_num);
+    std::deque<pds> prompt(const std::string &word, const int prompt_num) const;
+
+    /**
+     * @brief 从字符串和权重的组合中构建字典树。
+     *
+     * @param dict （字符串，权重）的字典。
+     */
+    void build(std::vector<std::pair<std::string, double>> &dict);
 };

@@ -16,12 +16,21 @@ class Utility final {
      * @param filepath 文件路径
      * @return std::vector<std::string>
      */
-    static std::vector<std::string> readFile(const char *filepath);
+    static const std::vector<std::string> readFile(const char *filepath);
 
     /**
      * @brief 导入配置文件
      *
      * @return std::unordered_map<std::string, std::string>
      */
-    static std::unordered_map<std::string, std::string> loadConfig();
+    static const std::unordered_map<std::string, std::string> loadConfig();
+
+    /**
+     * @brief 从 json 文件中提取字符串和权重
+     *
+     * @param json
+     * @return const std::vector<std::pair<std::string, double>> 字符串和权重
+     */
+    static const std::vector<std::pair<std::string, double>>
+    json2vec(const std::vector<std::string> &json);
 };

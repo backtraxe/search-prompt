@@ -1,139 +1,157 @@
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
-#include <condition_variable>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
-#include <deque>
-#include <fstream>
 #include <functional>
 #include <iostream>
-#include <memory>
-#include <mutex>
+#include <netinet/in.h>
 #include <string>
-#include <thread>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <unordered_map>
 #include <vector>
 
+#include "ThreadPool.hpp"
 #include "Trie.hpp"
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
+#include "Utility.hpp"
 
-using rapidjson::Document;
-using std::condition_variable;
-using std::cout;
-using std::deque;
-using std::ifstream;
-using std::ios;
-using std::lock_guard;
-using std::mutex;
-using std::shared_ptr;
-using std::streamsize;
-using std::thread;
-using std::unique_lock;
-using std::vector;
+class Server final {
+  private:
+    int listenFd;
+    ThreadPool threadPool;
+    Trie trie;
+    const int promptNum;
 
-class Server final {};
+  public:
+    Server(const char *ip, int port, int threadNum, int shardNum, int promptNum)
+        : threadPool(threadNum), trie(shardNum), promptNum(promptNum) {
+        // 创建socket
+        listenFd = socket(AF_INET, SOCK_STREAM, 0);
+        if (-1 == listenFd) {
+            std::cerr << "创建 socket 失败\n";
+            return;
+        }
 
-/**
- * @brief 通过字符数组中的 json 数据建立 trie
- *
- * @param trie 字典树
- * @param buf 字符数组 json 数组
- */
-void init_trie(Trie &trie, vector<string> &file) {
-    auto start_time = clock();
+        // 初始化服务器地址
+        struct sockaddr_in server_addr;
+        server_addr.sin_family = AF_INET;
+        server_addr.sin_addr.s_addr = inet_addr(ip); // ip
+        server_addr.sin_port = htons(port);          // port
 
-    // json 解析器
-    Document doc;
-    int count = 0;
-    for (auto &line : file) {
-        doc.Parse(line.c_str());
-        if (doc.HasMember("_k") && doc["_k"].IsString() &&
-            doc.HasMember("_s") && doc["_s"].IsObject()) {
-            auto &obj = doc["_s"];
-            if (obj.HasMember("0") && obj["0"].IsDouble()) {
-                trie.insert(doc["_k"].GetString(), obj["0"].GetDouble());
+        // 绑定地址
+        int ret = bind(listenFd, (struct sockaddr *)&server_addr,
+                       sizeof(server_addr));
+        if (-1 == ret) {
+            std::cerr << "绑定地址失败\n";
+            return;
+        }
+
+        // 监听请求
+        ret = listen(listenFd, SOMAXCONN);
+        if (-1 == ret) {
+            std::cerr << "监听请求失败\n";
+            return;
+        }
+
+        // 读取数据
+        auto start_time = clock();
+        auto dict = Utility::json2vec(
+            Utility::readFile("../hourly_smartbox_json.2023071200"));
+        auto end_time = clock();
+        std::cout << "读取数据耗时："
+                  << ((double)end_time - start_time) / CLOCKS_PER_SEC << "s\n";
+
+        // 建立字典树
+        start_time = clock();
+        trie.build(dict);
+        end_time = clock();
+        std::cout << "建立Trie耗时："
+                  << ((double)end_time - start_time) / CLOCKS_PER_SEC << "s\n";
+
+        std::cout << "服务器运行中\n";
+    }
+
+    ~Server() { close(listenFd); }
+
+    void listenRequest() {
+        while (true) {
+            // 建立连接
+            struct sockaddr_in client_addr;
+            socklen_t socklen = sizeof(client_addr);
+            int clientfd =
+                accept(listenFd, (struct sockaddr *)&client_addr, &socklen);
+            if (-1 == clientfd) {
+                std::cerr << "连接失败\n";
+                continue;
+            } else {
+                std::cout << "客户端 " << inet_ntoa(client_addr.sin_addr)
+                          << " 已连接\n";
+                // 加入线程池
+                threadPool.addTask(communicate, clientfd, client_addr, trie,
+                                   promptNum);
             }
         }
-        count++;
     }
 
-    auto end_time = clock();
+    static void communicate(const int fd, const struct sockaddr_in &addr,
+                            const Trie &trie, const int promptNum) {
+        // 数据交互
+        char buffer[1024];
+        int ret;
+        while (true) {
+            // 从客户端接收数据
+            memset(buffer, 0, sizeof(buffer));
+            ret = recv(fd, buffer, sizeof(buffer), 0);
+            if (ret <= 0) {
+                std::cout << "recv error\n";
+                break;
+            } else {
+                std::cout << "接收成功，接收客户端 " << inet_ntoa(addr.sin_addr)
+                          << " 发送的内容：" << buffer << "\n";
+            }
 
-    cout << "插入 " << count << " 条数据，共耗时 "
-         << ((double)end_time - start_time) / CLOCKS_PER_SEC << "s\n";
-}
+            // 字典树查询候选词
+            std::string tmp_str = buffer;
+            auto start_time = clock();
+            auto dict = trie.prompt(tmp_str, promptNum);
+            auto end_time = clock();
+            std::cout << "搜索 " << tmp_str << "，耗时 "
+                      << ((double)end_time - start_time) / CLOCKS_PER_SEC
+                      << "s\n";
+            tmp_str = "";
+            for (auto &p : dict) {
+                tmp_str +=
+                    "{" + p.second + ", " + std::to_string(p.first) + "} ";
+            }
+            if (tmp_str.empty()) {
+                tmp_str = " ";
+            }
 
-int main() {
-    cout << "服务器运行中\n";
-
-    // 字典树初始化
-    Trie trie;
-    auto file = read_file("hourly_smartbox_json.2023071200");
-    // load_dict(trie);
-    init_trie(trie, file);
-
-    // 线程池初始化
-    ThreadPool threadPool;
-    threadPool.init(stoi(params["thread_num"]));
-    Task *task = nullptr;
-
-    // 创建socket
-    int listenfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (-1 == listenfd) {
-        cout << "create socket error\n";
-        return -1;
-    }
-
-    // 初始化服务器地址
-    struct sockaddr_in server_addr;
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(params["ip"].c_str()); // ip
-    server_addr.sin_port = htons(stoi(params["port"]));            // port
-
-    // 绑定地址
-    int ret =
-        bind(listenfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-    if (-1 == ret) {
-        cout << "bind error\n";
-        return -1;
-    }
-
-    // 监听请求
-    ret = listen(listenfd, SOMAXCONN);
-    if (-1 == ret) {
-        cout << "listen error\n";
-        return -1;
-    }
-
-    while (true) {
-        // 建立连接
-        struct sockaddr_in client_addr;
-        socklen_t socklen = sizeof(client_addr);
-        int clientfd =
-            accept(listenfd, (struct sockaddr *)&client_addr, &socklen);
-        if (-1 == clientfd) {
-            cout << "accept error\n";
-            continue;
-        } else {
-            cout << "客户端 " << inet_ntoa(client_addr.sin_addr) << " 已连接\n";
-            // 加入线程池
-            task = new Task(clientfd, &client_addr, &trie,
-                            stoi(params["prompt_num"]));
-            threadPool.addTask(task);
+            // 向客户端发送数据
+            memset(buffer, 0, sizeof(buffer));
+            strncpy(buffer, tmp_str.c_str(), tmp_str.length() + 1);
+            ret = send(fd, buffer, strlen(buffer), 0);
+            if (ret < 0) {
+                std::cout << "send error\n";
+                break;
+            } else {
+                std::cout << "发送成功，向客户端 " << inet_ntoa(addr.sin_addr)
+                          << " 发送内容：" << buffer << "\n";
+            }
         }
 
-        // thread t(worker, clientfd, &client_addr, &trie);
-        // t.detach();
+        // 关闭连接
+        close(fd);
+        std::cout << "客户端 " << inet_ntoa(addr.sin_addr) << " 已断开连接\n";
     }
+};
 
-    // 关闭监听
-    close(listenfd);
-    threadPool.stop();
+int main() {
+    auto params = Utility::loadConfig();
+    Server server(params["ip"].c_str(), stoi(params["port"]),
+                  stoi(params["thread_num"]), stoi(params["shard_num"]),
+                  stoi(params["prompt_num"]));
+    server.listenRequest();
 
     return 0;
 }

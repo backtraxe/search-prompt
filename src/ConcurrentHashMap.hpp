@@ -53,7 +53,7 @@ class ConcurrentHashMap {
      * @brief 分片线程安全的哈希表。
      *
      */
-    std::vector<SingleThreadHashMap *> m_vec;
+    std::vector<SingleThreadHashMap> m_vec;
 
     /**
      * @brief 分片掩码。
@@ -61,25 +61,20 @@ class ConcurrentHashMap {
      */
     const size_t m_mask;
 
-    SingleThreadHashMap &get_shard(const _K &key) {
+    SingleThreadHashMap &getShard(const _K &key) {
         // 位运算选择分片
-        auto hash_code = std::hash<_K>(key);
+        std::hash<_K> hashFunc;
+        auto hash_code = hashFunc(key);
         return m_vec[hash_code & m_mask];
     }
 
   public:
-    ConcurrentHashMap(size_t num_shard)
-        : m_mask(num_shard - 1), m_vec(num_shard) {}
+    ConcurrentHashMap(size_t shardNum)
+        : m_vec(shardNum), m_mask(shardNum - 1) {}
 
-    void put(const _K &key, _V value) {
-        auto hashmap = get_shard(key);
-        hashmap.put(key, value);
-    }
+    void put(const _K &key, _V value) { getShard(key).put(key, value); }
 
-    _V get(const _K &key) {
-        auto hashmap = get_shard(key);
-        return hashmap.get(key);
-    }
+    _V get(const _K &key) { return getShard(key).get(key); }
 
-    const std::vector<SingleThreadHashMap *> &getData() const { return m_vec; }
+    const std::vector<SingleThreadHashMap> &getData() const { return m_vec; }
 };

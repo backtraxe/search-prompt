@@ -1,6 +1,7 @@
 #pragma once
 
 #include <condition_variable>
+#include <future>
 #include <mutex>
 #include <queue>
 #include <vector>
@@ -49,7 +50,7 @@ class ThreadPool final {
     std::queue<std::function<void()>> taskQueue;
 
   public:
-    ThreadPool(int threadNum);
+    ThreadPool(size_t threadNum);
     ~ThreadPool();
     ThreadPool(const ThreadPool &taskPool) = delete;
     ThreadPool operator=(const ThreadPool &taskPool) = delete;
@@ -61,5 +62,6 @@ class ThreadPool final {
      * @tparam Args
      */
     template <class F, class... Args>
-    void addTask(F &&f, Args &&...args);
+    auto addTask(F &&f, Args &&...args)
+        -> std::future<typename std::result_of<F(Args...)>::type>;
 };

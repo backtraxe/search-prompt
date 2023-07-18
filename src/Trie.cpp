@@ -1,8 +1,6 @@
 #include "Trie.hpp"
 
-Trie::Trie(const size_t num_shard) : num_shard(num_shard) {
-    root = new TrieNode('0', 0, num_shard);
-}
+Trie::Trie(const size_t shardNum) { root = new TrieNode('0', 0, shardNum); }
 
 Trie::~Trie() { deleteTrie(root); }
 
@@ -60,7 +58,8 @@ bool Trie::has(const std::string &word) const {
  * @param prompt_num 提示词数量。
  * @return deque<pair<double, string>> 候选词数组，根据权重降序排列。
  */
-std::deque<pds> Trie::prompt(const std::string &word, const int prompt_num) {
+std::deque<pds> Trie::prompt(const std::string &word,
+                             const int prompt_num) const {
     std::deque<pds> dict;
     auto cur = endingNode(word);
     if (!cur) {
@@ -94,14 +93,12 @@ std::deque<pds> Trie::prompt(const std::string &word, const int prompt_num) {
  * @param prompt_num 提示词数量。
  */
 void Trie::traverse(const TrieNode *cur, std::string &word,
-                    std::priority_queue<pds> &min_heap, const int prompt_num) {
+                    std::priority_queue<pds> &min_heap,
+                    const int prompt_num) const {
     // 遍历数组
     for (auto &x : cur->next.getData()) {
-        if (!x) {
-            continue;
-        }
         // 遍历哈希表
-        for (auto &y : x->getData()) {
+        for (auto &y : x.getData()) {
             word.push_back(y.first);
             if (y.second->is_end) {
                 // 负权重（最小堆），字符串
@@ -144,14 +141,18 @@ void Trie::deleteTrie(TrieNode *cur) {
     if (cur) {
         // 遍历数组
         for (auto &x : cur->next.getData()) {
-            if (!x) {
-                continue;
-            }
             // 遍历哈希表
-            for (auto &y : x->getData()) {
+            for (auto &y : x.getData()) {
                 deleteTrie(y.second);
             }
         }
         delete cur;
+    }
+}
+
+void Trie::build(std::vector<std::pair<std::string, double>> &dict) {
+    sort(dict.begin(), dict.end());
+    for (auto &p : dict) {
+        insert(p.first, p.second);
     }
 }
