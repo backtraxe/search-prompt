@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <iostream>
+#include <stdexcept>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -16,7 +17,7 @@ class Client final {
         fd = socket(AF_INET, SOCK_STREAM, 0);
         if (-1 == fd) {
             std::cerr << "创建 socket 失败\n";
-            return;
+            exit(-1);
         }
 
         // 指定服务端 ip 和端口
@@ -30,7 +31,7 @@ class Client final {
             connect(fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
         if (-1 == ret) {
             std::cerr << "连接服务器失败\n";
-            return;
+            exit(-1);
         }
 
         std::cout << "客户端运行中\n";

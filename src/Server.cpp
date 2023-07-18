@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "ThreadPool.hpp"
-#include "Trie.hpp"
+#include "TrieBase.hpp"
 #include "Utility.hpp"
 
 class Server final {
@@ -24,12 +24,12 @@ class Server final {
 
   public:
     Server(const char *ip, int port, int threadNum, int shardNum, int promptNum)
-        : threadPool(threadNum), trie(shardNum), promptNum(promptNum) {
+        : threadPool(threadNum), promptNum(promptNum) {
         // 创建socket
         listenFd = socket(AF_INET, SOCK_STREAM, 0);
         if (-1 == listenFd) {
             std::cerr << "创建 socket 失败\n";
-            return;
+            exit(-1);
         }
 
         // 初始化服务器地址
@@ -43,30 +43,35 @@ class Server final {
                        sizeof(server_addr));
         if (-1 == ret) {
             std::cerr << "绑定地址失败\n";
-            return;
+            exit(-1);
         }
 
         // 监听请求
         ret = listen(listenFd, SOMAXCONN);
         if (-1 == ret) {
             std::cerr << "监听请求失败\n";
-            return;
+            exit(-1);
         }
 
         // 读取数据
-        auto start_time = clock();
-        auto dict = Utility::json2vec(
-            Utility::readFile("hourly_smartbox_json.2023071200"));
-        auto end_time = clock();
-        std::cout << "读取数据耗时："
-                  << ((double)end_time - start_time) / CLOCKS_PER_SEC << "s\n";
-
-        // 建立字典树
-        start_time = clock();
-        trie.build(dict);
-        end_time = clock();
+        clock_t start_t, end_t;
+        {
+            std::vector<std::pair<std::string, double>> dict;
+            {
+                // 设置语句块删除临时对象
+                auto file =
+                    Utility::readFile("hourly_smartbox_json.2023071200");
+                dict = Utility::json2vec(file);
+            }
+            // 建立字典树
+            start_t = clock();
+            for (auto &p : dict) {
+                trie.insert(p.first, p.second);
+            }
+            end_t = clock();
+        }
         std::cout << "建立Trie耗时："
-                  << ((double)end_time - start_time) / CLOCKS_PER_SEC << "s\n";
+                  << ((double)end_t - start_t) / CLOCKS_PER_SEC << "s\n";
 
         std::cout << "服务器运行中\n";
     }
@@ -94,7 +99,7 @@ class Server final {
     }
 
     static void communicate(const int fd, const struct sockaddr_in &addr,
-                            const Trie &trie, const int promptNum) {
+                            Trie &trie, const int promptNum) {
         // 数据交互
         char buffer[1024];
         int ret;

@@ -20,6 +20,8 @@ const std::vector<std::string> Utility::readFile(const char *filePath) {
     while (std::getline(ifs, line)) {
         file.push_back(line);
         count++;
+        if (count == 200000)
+            break;
     }
     auto end_time = clock();
     std::cout << "读取 " << count << " 条数据耗时："
