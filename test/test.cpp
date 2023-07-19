@@ -1,24 +1,37 @@
+#include <chrono>
 #include <iostream>
-
-#include "../src/ThreadPool.hpp"
+#include <sys/time.h>
+#include <thread>
+#include <unistd.h>
+#include <unordered_map>
 
 using namespace std;
 
 int addTwo(int a, int b) { return a + b; }
 
+struct Person {
+    string name;
+    int age;
+};
+
 int main() {
-    ThreadPool threadPool(5);
-    // threadPool.addTask(addTwo, 1, 2);
+    // struct timeval t1, t2;
+    // gettimeofday(&t1, NULL);
+    // auto st = clock();
+    auto st = chrono::system_clock::now();
+    { this_thread::sleep_for(chrono::milliseconds(100)); }
+    // sleep(3);
+    auto et = chrono::system_clock::now();
 
-    std::vector<std::future<int>> results;
-    for (int i = 1; i <= 10; i++) {
-        results.emplace_back(threadPool.addTask([i] {
-            cout << i << endl;
-            return i;
-        }));
+    // auto et = clock();
+    // gettimeofday(&t2, NULL);
 
-        // threadPool.addTask([i] { cout << i << endl; });
-    }
+    // cout << ((double)et - st) / CLOCKS_PER_SEC * 1000 << endl;
+    // cout << ((t2.tv_sec - t1.tv_sec) * 1000 +
+    //          (double)(t2.tv_usec - t1.tv_usec) / 1000)
+    //      << endl;
+    auto inv = et - st;
+    cout << inv.count() << endl;
 
     return 0;
 }

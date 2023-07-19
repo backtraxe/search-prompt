@@ -44,7 +44,8 @@ class Client final {
 
     void communicate() {
         // 数据交互
-        char buffer[4096];
+        int bufSize = 2048;
+        char buffer[bufSize];
         int choice, ret;
         while (true) {
             std::cout << "继续输入1，退出输出2，请输入：";
@@ -54,7 +55,7 @@ class Client final {
                 // 发送消息
                 memset(buffer, 0, sizeof(buffer));
                 std::cout << "请输入搜索词：";
-                std::cin.getline(buffer, 1024);
+                std::cin.getline(buffer, bufSize);
                 ret = send(fd, buffer, strlen(buffer), 0);
                 if (ret <= 0) {
                     std::cerr << "发送失败\n";

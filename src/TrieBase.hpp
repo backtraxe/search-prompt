@@ -29,7 +29,8 @@ class Trie final {
      * @param prompt_num 提示词数量。
      */
     void traverse(const TrieNode *cur, std::string &word,
-                  std::priority_queue<pds> &min_heap, const int prompt_num);
+                  std::priority_queue<pds> &min_heap, const int prompt_num,
+                  std::atomic<bool> &flag);
 
     /**
      * @brief 查找字符串最后字符所在的结点。
@@ -38,13 +39,6 @@ class Trie final {
      * @return TrieNode* 字典树结点。
      */
     Trie::TrieNode *endingNode(const std::string &word) const;
-
-    /**
-     * @brief 删除以当前结点为根结点的整棵字典树。
-     *
-     * @param cur 当前结点。
-     */
-    void deleteTrie(TrieNode *cur);
 
   public:
     Trie();
@@ -77,5 +71,6 @@ class Trie final {
      * @param prompt_num 提示词数量。
      * @return deque<pair<double, string>> 候选词数组，根据权重降序排列。
      */
-    std::deque<pds> prompt(const std::string &word, const int prompt_num);
+    void prompt(const std::string &word, const int prompt_num,
+                std::deque<pds> &dict, std::atomic<bool> &flag);
 };

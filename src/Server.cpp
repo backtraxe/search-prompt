@@ -1,12 +1,16 @@
 #include <arpa/inet.h>
+#include <chrono>
+#include <condition_variable>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
 #include <functional>
 #include <iostream>
+#include <mutex>
 #include <netinet/in.h>
 #include <string>
 #include <sys/socket.h>
+#include <thread>
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
@@ -15,16 +19,51 @@
 #include "TrieBase.hpp"
 #include "Utility.hpp"
 
+/**
+ * @brief 线程通信的控制器。
+ *
+ */
+struct MidNode {
+    MidNode() : stopFlag(false), exitFlag(false) {}
+
+    /**
+     * @brief 互斥量。
+     *
+     */
+    std::mutex mtx;
+
+    /**
+     * @brief 通知进程的条件变量。
+     *
+     */
+    std::condition_variable startClock;
+
+    /**
+     * @brief 控制函数提前结束的标志。
+     *
+     */
+    std::atomic<bool> stopFlag;
+
+    /**
+     * @brief 控制线程退出的标志。
+     *
+     */
+    std::atomic<bool> exitFlag;
+};
+
 class Server final {
   private:
     int listenFd;
     ThreadPool threadPool;
     Trie trie;
     const int promptNum;
+    const int millisecondLimit;
 
   public:
-    Server(const char *ip, int port, int threadNum, int shardNum, int promptNum)
-        : threadPool(threadNum), promptNum(promptNum) {
+    Server(const char *ip, int port, int threadNum, int shardNum, int promptNum,
+           int millisecondLimit)
+        : threadPool(threadNum), promptNum(promptNum),
+          millisecondLimit(millisecondLimit) {
         // 创建socket
         listenFd = socket(AF_INET, SOCK_STREAM, 0);
         if (-1 == listenFd) {
@@ -54,22 +93,22 @@ class Server final {
         }
 
         // 读取数据
-        clock_t start_t, end_t;
-        {
-            std::vector<std::pair<std::string, double>> dict;
-            {
-                // 设置语句块删除临时对象
-                auto file =
-                    Utility::readFile("hourly_smartbox_json.2023071200");
-                dict = Utility::json2vec(file);
-            }
-            // 建立字典树
-            start_t = clock();
-            for (auto &p : dict) {
-                trie.insert(p.first, p.second);
-            }
-            end_t = clock();
+        std::vector<std::pair<std::string, double>> dict;
+        Utility::loadData("hourly_smartbox_json.2023071200", dict);
+
+        // 数据排序
+        auto start_t = clock();
+        sort(dict.begin(), dict.end());
+        auto end_t = clock();
+        std::cout << "排序数据耗时："
+                  << ((double)end_t - start_t) / CLOCKS_PER_SEC << "s\n";
+
+        // 建立字典树
+        start_t = clock();
+        for (auto &p : dict) {
+            trie.insert(p.first, p.second);
         }
+        end_t = clock();
         std::cout << "建立Trie耗时："
                   << ((double)end_t - start_t) / CLOCKS_PER_SEC << "s\n";
 
@@ -78,6 +117,10 @@ class Server final {
 
     ~Server() { close(listenFd); }
 
+    /**
+     * @brief
+     *
+     */
     void listenRequest() {
         while (true) {
             // 建立连接
@@ -92,23 +135,34 @@ class Server final {
                 std::cout << "客户端 " << inet_ntoa(client_addr.sin_addr)
                           << " 已连接\n";
                 // 加入线程池
+                // 使用两个线程配合工作，一个完成用户请求，另一个负责记时
+                MidNode *node = new MidNode();
                 threadPool.addTask(communicate, clientfd, client_addr, trie,
-                                   promptNum);
+                                   promptNum, node);
+                threadPool.addTask(countDown, millisecondLimit, node);
             }
         }
     }
 
+    /**
+     * @brief
+     *
+     * @param fd
+     * @param addr
+     * @param trie
+     * @param promptNum
+     */
     static void communicate(const int fd, const struct sockaddr_in &addr,
-                            Trie &trie, const int promptNum) {
+                            Trie &trie, const int promptNum, MidNode *node) {
         // 数据交互
-        char buffer[1024];
+        char buffer[2048];
         int ret;
         while (true) {
             // 从客户端接收数据
             memset(buffer, 0, sizeof(buffer));
             ret = recv(fd, buffer, sizeof(buffer), 0);
             if (ret <= 0) {
-                std::cout << "recv error\n";
+                std::cerr << "接收失败\n";
                 break;
             } else {
                 std::cout << "接收成功，接收客户端 " << inet_ntoa(addr.sin_addr)
@@ -117,17 +171,34 @@ class Server final {
 
             // 字典树查询候选词
             std::string tmp_str = buffer;
-            auto start_time = clock();
-            auto dict = trie.prompt(tmp_str, promptNum);
-            auto end_time = clock();
-            std::cout << "搜索 " << tmp_str << "，耗时 "
-                      << ((double)end_time - start_time) / CLOCKS_PER_SEC
-                      << "s\n";
+
+            node->stopFlag = false;
+            std::deque<pds> dict;
+            // 其他线程进行查询，并设置超时时间
+            // 通知另一个线程开始计时
+            std::unique_lock<std::mutex> lock(node->mtx);
+            node->startClock.notify_one();
+            lock.unlock();
+
+            // 搜索trie
+            // auto st_t = std::chrono::system_clock::now();
+            trie.prompt(tmp_str, promptNum, dict, node->stopFlag);
+            // auto ed_t = std::chrono::system_clock::now();
+
+            // std::chrono::duration<double, std::milli> inv_t = ed_t - st_t;
+            // std::cout << "搜索 " << tmp_str << "，耗时 "
+            //           <<
+            //           std::chrono::duration_cast<std::chrono::milliseconds>(
+            //                  inv_t)
+            //                  .count()
+            //           << "ms\n";
+
             tmp_str = "";
             for (auto &p : dict) {
                 tmp_str +=
-                    "{" + p.second + ", " + std::to_string(p.first) + "} ";
+                    "{" + p.second + ", " + std::to_string(-p.first) + "} ";
             }
+            // 返回空格代表返回为空，防止客户端recv阻塞
             if (tmp_str.empty()) {
                 tmp_str = " ";
             }
@@ -137,7 +208,7 @@ class Server final {
             strncpy(buffer, tmp_str.c_str(), tmp_str.length() + 1);
             ret = send(fd, buffer, strlen(buffer), 0);
             if (ret < 0) {
-                std::cout << "send error\n";
+                std::cerr << "发送失败\n";
                 break;
             } else {
                 std::cout << "发送成功，向客户端 " << inet_ntoa(addr.sin_addr)
@@ -147,7 +218,29 @@ class Server final {
 
         // 关闭连接
         close(fd);
+        node->startClock.notify_one();
+        node->exitFlag = true;
+        delete node;
+
         std::cout << "客户端 " << inet_ntoa(addr.sin_addr) << " 已断开连接\n";
+    }
+
+    static void countDown(const int milliseconds, MidNode *node) {
+        while (true) {
+            // 互斥锁
+            std::unique_lock<std::mutex> lock(node->mtx);
+            // 阻塞，等待另一个线程的通知
+            node->startClock.wait(lock);
+            lock.unlock();
+            // 休眠指定时间
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(milliseconds));
+            // 到时间后更改标志位，让另一个线程结束查找，立即返回
+            node->stopFlag = true;
+            if (node->exitFlag) {
+                break;
+            }
+        }
     }
 };
 
@@ -155,7 +248,8 @@ int main() {
     auto params = Utility::loadConfig();
     Server server(params["ip"].c_str(), stoi(params["port"]),
                   stoi(params["thread_num"]), stoi(params["shard_num"]),
-                  stoi(params["prompt_num"]));
+                  stoi(params["prompt_num"]),
+                  stoi(params["millisecond_limit"]));
     server.listenRequest();
 
     return 0;

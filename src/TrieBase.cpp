@@ -1,8 +1,10 @@
 #include "TrieBase.hpp"
 
+#include <iostream>
+
 Trie::Trie() { root = new TrieNode(); }
 
-Trie::~Trie() { deleteTrie(root); }
+Trie::~Trie() {}
 
 /**
  * @brief 添加字符串。
@@ -42,14 +44,15 @@ bool Trie::remove(const std::string &word) const {
  *
  * @param word 前缀单词。
  * @param prompt_num 提示词数量。
- * @return deque<pair<double, string>> 候选词数组，根据权重降序排列。
+ * @return std::deque<pds> 候选词数组，根据权重降序排列。
  */
-std::deque<pds> Trie::prompt(const std::string &word, const int prompt_num) {
-    std::deque<pds> dict;
+void Trie::prompt(const std::string &word, const int prompt_num,
+                  std::deque<pds> &dict, std::atomic<bool> &flag) {
+    auto st_t = clock();
     auto cur = endingNode(word);
     if (!cur) {
         // 不存在该前缀，返回空数组
-        return dict;
+        return;
     }
     // 权重变为负数，将大顶堆转为小顶堆
     std::priority_queue<pds> min_heap;
@@ -59,13 +62,14 @@ std::deque<pds> Trie::prompt(const std::string &word, const int prompt_num) {
     }
     // 遍历 trie
     std::string prefix = word;
-    traverse(cur, prefix, min_heap, prompt_num);
+    traverse(cur, prefix, min_heap, prompt_num, flag);
     // 按权重降序排列
     while (!min_heap.empty()) {
         dict.emplace_front(min_heap.top());
         min_heap.pop();
     }
-    return dict;
+    auto ed_t = clock();
+    std::cout << ((double)ed_t - st_t) / CLOCKS_PER_SEC * 1000 << "ms\n";
 }
 
 /**
@@ -78,9 +82,16 @@ std::deque<pds> Trie::prompt(const std::string &word, const int prompt_num) {
  * @param prompt_num 提示词数量。
  */
 void Trie::traverse(const TrieNode *cur, std::string &word,
-                    std::priority_queue<pds> &min_heap, const int prompt_num) {
+                    std::priority_queue<pds> &min_heap, const int prompt_num,
+                    std::atomic<bool> &flag) {
+    if (flag) {
+        return;
+    }
     // 遍历
     for (auto &p : cur->next) {
+        if (flag) {
+            return;
+        }
         word.push_back(p.first);
         if (p.second->is_end) {
             // 负权重（最小堆）、字符串
@@ -89,7 +100,7 @@ void Trie::traverse(const TrieNode *cur, std::string &word,
                 min_heap.pop();
             }
         }
-        traverse(p.second, word, min_heap, prompt_num);
+        traverse(p.second, word, min_heap, prompt_num, flag);
         word.pop_back();
     }
 }
@@ -109,19 +120,4 @@ Trie::TrieNode *Trie::endingNode(const std::string &word) const {
         cur = cur->next[c];
     }
     return cur;
-}
-
-/**
- * @brief 删除以当前结点为根结点的整棵字典树。
- *
- * @param cur 当前结点。
- */
-void Trie::deleteTrie(TrieNode *cur) {
-    if (cur) {
-        // 遍历
-        for (auto &p : cur->next) {
-            deleteTrie(p.second);
-        }
-        delete cur;
-    }
 }

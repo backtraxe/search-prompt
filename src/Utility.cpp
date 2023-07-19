@@ -3,31 +3,6 @@
 #include <string>
 
 #include "Utility.hpp"
-#include "rapidjson/document.h"
-
-/**
- * @brief 按行读取文件
- *
- * @param filepath 文件路径
- * @return std::vector<std::string>
- */
-const std::vector<std::string> Utility::readFile(const char *filePath) {
-    std::vector<std::string> file;
-    int count = 0;
-    auto start_time = clock();
-    std::ifstream ifs(filePath);
-    std::string line;
-    while (std::getline(ifs, line)) {
-        file.push_back(line);
-        count++;
-        if (count == 200000)
-            break;
-    }
-    auto end_time = clock();
-    std::cout << "读取 " << count << " 条数据耗时："
-              << ((double)end_time - start_time) / CLOCKS_PER_SEC << "s\n";
-    return file;
-}
 
 /**
  * @brief 导入 config.conf 配置文件
@@ -53,30 +28,33 @@ const std::unordered_map<std::string, std::string> Utility::loadConfig() {
     return params;
 }
 
-/**
- * @brief 从 json 文件中提取字符串和权重
- *
- * @param json
- * @return const std::vector<std::string, double> 字符串和权重
- */
-const std::vector<std::pair<std::string, double>>
-Utility::json2vec(const std::vector<std::string> &json) {
-    std::vector<std::pair<std::string, double>> dict;
-    // json 解析器
-    rapidjson::Document doc;
-    auto start_time = clock();
-    for (auto &line : json) {
-        doc.Parse(line.c_str());
-        if (doc.HasMember("_k") && doc["_k"].IsString() &&
-            doc.HasMember("_s") && doc["_s"].IsObject()) {
-            auto &obj = doc["_s"];
-            if (obj.HasMember("0") && obj["0"].IsDouble()) {
-                dict.emplace_back(doc["_k"].GetString(), obj["0"].GetDouble());
-            }
+void Utility::loadData(const char *filePath,
+                       std::vector<std::pair<std::string, double>> &dict) {
+    std::ifstream ifs(filePath);
+    std::string line;
+    int count = 0;
+    auto start_t = clock();
+    while (std::getline(ifs, line)) {
+        // 左边界，右边界
+        int idx_left, idx_right;
+        double weight = 0.0;
+        idx_left = line.find("\"0\":");
+        if (idx_left != -1) {
+            idx_right = line.find(",", idx_left);
+            weight = stod(line.substr(idx_left + 5, idx_right - idx_left - 5));
         }
+
+        idx_left = line.find("\"_k\":");
+        idx_right = line.find("\"", idx_left + 7);
+
+        dict.emplace_back(line.substr(idx_left + 7, idx_right - idx_left - 7),
+                          weight);
+        count++;
+
+        if (count == 1000000)
+            break;
     }
-    auto end_time = clock();
-    std::cout << "提取json耗时："
-              << ((double)end_time - start_time) / CLOCKS_PER_SEC << "s\n";
-    return dict;
+    auto end_t = clock();
+    std::cout << "读取 " << count << " 条数据耗时："
+              << ((double)end_t - start_t) / CLOCKS_PER_SEC << "s\n";
 }
