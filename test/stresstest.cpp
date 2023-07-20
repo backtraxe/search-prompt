@@ -5,7 +5,6 @@
 #include <iostream>
 #include <pthread.h>
 #include <signal.h>
-#include <sys/_pthread/_pthread_mutex_t.h>
 #include <sys/select.h>
 #include <unistd.h>
 
