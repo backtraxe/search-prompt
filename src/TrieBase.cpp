@@ -1,5 +1,6 @@
 #include "TrieBase.hpp"
 
+#include <atomic>
 #include <iostream>
 
 Trie::Trie() { root = new TrieNode(); }
