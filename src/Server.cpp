@@ -93,24 +93,37 @@ class Server final {
         }
 
         // 读取数据
-        std::vector<std::pair<std::string, double>> dict;
-        Utility::loadData("hourly_smartbox_json.2023071200", dict);
+        // std::vector<std::pair<std::string, double>> dict;
+        // Utility::loadData("hourly_smartbox_json.2023071200", dict);
+
+        for (int i = 1; i <= 6; i++) {
+            auto st_t = clock();
+            std::vector<std::pair<std::string, double>> dict;
+            Utility::loadData2("data" + std::to_string(i), dict);
+            sort(dict.begin(), dict.end());
+            for (auto &p : dict) {
+                trie.insert(p.first, p.second);
+            }
+            auto ed_t = clock();
+            std::cout << "准备第" << i << "份数据耗时："
+                      << ((double)ed_t - st_t) / CLOCKS_PER_SEC << "s\n";
+        }
 
         // 数据排序
-        auto start_t = clock();
-        sort(dict.begin(), dict.end());
-        auto end_t = clock();
-        std::cout << "排序数据耗时："
-                  << ((double)end_t - start_t) / CLOCKS_PER_SEC << "s\n";
+        // auto start_t = clock();
+        // sort(dict.begin(), dict.end());
+        // auto end_t = clock();
+        // std::cout << "排序数据耗时："
+        //           << ((double)end_t - start_t) / CLOCKS_PER_SEC << "s\n";
 
         // 建立字典树
-        start_t = clock();
-        for (auto &p : dict) {
-            trie.insert(p.first, p.second);
-        }
-        end_t = clock();
-        std::cout << "建立Trie耗时："
-                  << ((double)end_t - start_t) / CLOCKS_PER_SEC << "s\n";
+        // start_t = clock();
+        // for (auto &p : dict) {
+        //     trie.insert(p.first, p.second);
+        // }
+        // end_t = clock();
+        // std::cout << "建立Trie耗时："
+        //           << ((double)end_t - start_t) / CLOCKS_PER_SEC << "s\n";
 
         std::cout << "服务器运行中\n";
     }
@@ -173,6 +186,7 @@ class Server final {
             std::string tmp_str = buffer;
 
             node->stopFlag = false;
+            node->exitFlag = false;
             std::deque<pds> dict;
             // 其他线程进行查询，并设置超时时间
             // 通知另一个线程开始计时
@@ -226,6 +240,7 @@ class Server final {
     }
 
     static void countDown(const int milliseconds, MidNode *node) {
+        node->exitFlag = false;
         while (true) {
             // 互斥锁
             std::unique_lock<std::mutex> lock(node->mtx);

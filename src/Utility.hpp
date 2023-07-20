@@ -25,4 +25,7 @@ class Utility final {
      */
     static void loadData(const char *filePath,
                          std::vector<std::pair<std::string, double>> &dict);
+
+    static void loadData2(const std::string filePath,
+                          std::vector<std::pair<std::string, double>> &dict);
 };

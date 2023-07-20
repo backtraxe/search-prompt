@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -51,10 +52,22 @@ void Utility::loadData(const char *filePath,
                           weight);
         count++;
 
-        if (count == 1000000)
-            break;
+        // if (count == 1000000)
+        //     break;
     }
     auto end_t = clock();
     std::cout << "读取 " << count << " 条数据耗时："
               << ((double)end_t - start_t) / CLOCKS_PER_SEC << "s\n";
+}
+
+void Utility::loadData2(const std::string filePath,
+                        std::vector<std::pair<std::string, double>> &dict) {
+    std::ifstream ifs(filePath);
+    std::string line;
+    while (std::getline(ifs, line)) {
+        int idx = line.rfind("####");
+        // std::cout << line << "\n";
+        dict.emplace_back(line.substr(0, idx),
+                          stod(line.substr(idx + 4, line.size() - idx - 4)));
+    }
 }
