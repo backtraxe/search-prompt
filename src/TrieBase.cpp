@@ -1,5 +1,6 @@
 #include "TrieBase.hpp"
 
+#include <chrono>
 #include <iostream>
 
 Trie::Trie() { root = new TrieNode(); }
@@ -120,4 +121,73 @@ Trie::TrieNode *Trie::endingNode(const std::string &word) const {
         cur = cur->next[c];
     }
     return cur;
+}
+
+void Trie::prompt(const std::string &word, const int prompt_num,
+                  std::deque<pds> &dict, const int millisecondLimit) {
+    // 记录开始时间
+    auto st_t = std::chrono::steady_clock::now();
+
+    // 查找前缀
+    auto cur = endingNode(word);
+    if (!cur) {
+        // 不存在该前缀，返回空数组
+        return;
+    }
+
+    // 保存权重更大的字符串
+    std::priority_queue<pds> min_heap;
+    if (cur->is_end) {
+        // 权重变为负数，将大顶堆转为小顶堆
+        min_heap.emplace(-cur->weight, word);
+    }
+
+    // 遍历 trie
+    std::string prefix = word;
+    bool exitFlag = false;
+    traverse(cur, prefix, min_heap, prompt_num, st_t, 0ULL, millisecondLimit,
+             exitFlag);
+    // 按权重降序排列
+    while (!min_heap.empty()) {
+        dict.emplace_front(min_heap.top());
+        min_heap.pop();
+    }
+    auto ed_t = std::chrono::steady_clock::now();
+    std::cout << (ed_t - st_t).count() / 1000000.0 << "ms\n";
+}
+
+void Trie::traverse(const TrieNode *cur, std::string &word,
+                    std::priority_queue<pds> &min_heap, const int prompt_num,
+                    const std::chrono::steady_clock::time_point &st_t,
+                    unsigned long long counter, const int millisecondLimit,
+                    bool &exitFlag) {
+    if (exitFlag) {
+        return;
+    }
+    // 遍历
+    for (auto &p : cur->next) {
+        word.push_back(p.first);
+        counter++;
+        if (counter % 200ULL == 0) {
+            // 判断当前时间
+            auto ed_t = std::chrono::steady_clock::now();
+            if ((ed_t - st_t).count() / 1000000.0 >= millisecondLimit) {
+                exitFlag = true;
+                return;
+            }
+        }
+        if (p.second->is_end) {
+            // 负权重（最小堆）、字符串
+            min_heap.emplace(-p.second->weight, word);
+            if ((int)min_heap.size() > prompt_num) {
+                min_heap.pop();
+            }
+        }
+        traverse(p.second, word, min_heap, prompt_num, st_t, counter,
+                 millisecondLimit, exitFlag);
+        if (exitFlag) {
+            return;
+        }
+        word.pop_back();
+    }
 }

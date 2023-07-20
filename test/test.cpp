@@ -1,4 +1,6 @@
+#include <__chrono/duration.h>
 #include <chrono>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -59,11 +61,44 @@ int main() {
     //     ofs.close();
     // }
 
-    string s1 = "3.14";
-    string s2 = "0";
+    // string s1 = "3.14";
+    // string s2 = "0";
 
-    stod(s1);
-    stod(s2);
+    // stod(s1);
+    // stod(s2);
+
+    // unsigned long long counter = 0ULL;
+    // auto st_t = chrono::steady_clock::now();
+    // while (true) {
+    //     counter++;
+    //     if (counter % 1000000000ULL == 0) {
+    //         auto ed_t = chrono::steady_clock::now();
+    //         cout << (ed_t - st_t).count() / 1000000.0 << endl;
+    //         break;
+    //     }
+    // }
+
+    auto st_t = chrono::steady_clock::now();
+    // cout << st_t << endl;
+
+    cout << clock() << endl;
+
+    string s = "abcde";
+    char buf[100] = {0};
+
+    cout << s << endl;
+    cout << buf << endl;
+
+    strcpy(buf, s.c_str());
+    cout << buf << endl;
+
+    cout << strlen(buf) << endl;
+
+    cout << buf[5] << endl;
+
+    if (buf[5] == '\0') {
+        cout << "true" << endl;
+    }
 
     return 0;
 }

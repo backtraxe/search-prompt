@@ -74,4 +74,13 @@ class Trie final {
      */
     void prompt(const std::string &word, const int prompt_num,
                 std::deque<pds> &dict, std::atomic<bool> &flag);
+
+    void prompt(const std::string &word, const int prompt_num,
+                std::deque<pds> &dict, const int millisecondLimit);
+
+    void traverse(const TrieNode *cur, std::string &word,
+                  std::priority_queue<pds> &min_heap, const int prompt_num,
+                  const std::chrono::steady_clock::time_point &st_t,
+                  unsigned long long counter, const int millisecondLimit,
+                  bool &exitFlag);
 };

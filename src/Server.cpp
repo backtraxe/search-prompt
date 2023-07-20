@@ -100,10 +100,12 @@ class Server final {
         for (int i = 1; i <= 6; i++) {
             auto st_t = clock();
             std::vector<std::pair<std::string, double>> dict;
+            // 导入数据
             Utility::loadData2("data" + std::to_string(i), dict);
             // 插入前排序
             sort(dict.begin(), dict.end());
             for (auto &p : dict) {
+                // 插入 trie
                 trie.insert(p.first, p.second);
             }
             auto ed_t = clock();
@@ -147,14 +149,16 @@ class Server final {
                 std::cerr << "连接失败\n";
                 continue;
             } else {
-                std::cout << "客户端 " << inet_ntoa(client_addr.sin_addr)
-                          << " 已连接\n";
+                // std::cout << "客户端 " << inet_ntoa(client_addr.sin_addr)
+                //           << " 已连接\n";
+                threadPool.addTask(communicate, clientfd, client_addr, trie,
+                                   promptNum, millisecondLimit);
                 // 加入线程池
                 // 使用两个线程配合工作，一个完成用户请求，另一个负责记时
-                MidNode *node = new MidNode();
-                threadPool.addTask(communicate, clientfd, client_addr, trie,
-                                   promptNum, node);
-                threadPool.addTask(countDown, millisecondLimit, node);
+                // MidNode *node = new MidNode();
+                // threadPool.addTask(communicate, clientfd, client_addr, trie,
+                //                    promptNum, node);
+                // threadPool.addTask(countDown, millisecondLimit, node);
             }
         }
     }
@@ -168,7 +172,8 @@ class Server final {
      * @param promptNum
      */
     static void communicate(const int fd, const struct sockaddr_in &addr,
-                            Trie &trie, const int promptNum, MidNode *node) {
+                            Trie &trie, const int promptNum,
+                            int millisecondLimit) {
         // 数据交互
         char buffer[2048];
         int ret;
@@ -180,25 +185,26 @@ class Server final {
                 std::cerr << "接收失败\n";
                 break;
             } else {
-                std::cout << "接收成功，接收客户端 " << inet_ntoa(addr.sin_addr)
-                          << " 发送的内容：" << buffer << "\n";
+                // std::cout << "接收成功，接收客户端 " <<
+                // inet_ntoa(addr.sin_addr)
+                //           << " 发送的内容：" << buffer << "\n";
             }
 
             // 字典树查询候选词
             std::string tmp_str = buffer;
 
-            node->stopFlag = false;
-            node->exitFlag = false;
+            // node->stopFlag = false;
+            // node->exitFlag = false;
             std::deque<pds> dict;
             // 其他线程进行查询，并设置超时时间
             // 通知另一个线程开始计时
-            std::unique_lock<std::mutex> lock(node->mtx);
-            node->startClock.notify_one();
-            lock.unlock();
+            // std::unique_lock<std::mutex> lock(node->mtx);
+            // node->startClock.notify_one();
+            // lock.unlock();
 
             // 搜索trie
             // auto st_t = std::chrono::system_clock::now();
-            trie.prompt(tmp_str, promptNum, dict, node->stopFlag);
+            trie.prompt(tmp_str, promptNum, dict, millisecondLimit);
             // auto ed_t = std::chrono::system_clock::now();
 
             // std::chrono::duration<double, std::milli> inv_t = ed_t - st_t;
@@ -227,18 +233,20 @@ class Server final {
                 std::cerr << "发送失败\n";
                 break;
             } else {
-                std::cout << "发送成功，向客户端 " << inet_ntoa(addr.sin_addr)
-                          << " 发送内容：" << buffer << "\n";
+                // std::cout << "发送成功，向客户端 " <<
+                // inet_ntoa(addr.sin_addr)
+                //           << " 发送内容：" << buffer << "\n";
             }
         }
 
         // 关闭连接
         close(fd);
-        node->startClock.notify_one();
-        node->exitFlag = true;
-        delete node;
+        // node->startClock.notify_one();
+        // node->exitFlag = true;
+        // delete node;
 
-        std::cout << "客户端 " << inet_ntoa(addr.sin_addr) << " 已断开连接\n";
+        // std::cout << "客户端 " << inet_ntoa(addr.sin_addr) << "
+        // 已断开连接\n";
     }
 
     static void countDown(const int milliseconds, MidNode *node) {
