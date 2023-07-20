@@ -97,7 +97,7 @@ class Server final {
         // std::vector<std::pair<std::string, double>> dict;
         // Utility::loadData("hourly_smartbox_json.2023071200", dict);
 
-        for (int i = 1; i <= 6; i++) {
+        for (int i = 2; i <= 6; i++) {
             auto st_t = clock();
             std::vector<std::pair<std::string, double>> dict;
             // 导入数据
