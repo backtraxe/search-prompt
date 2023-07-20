@@ -152,8 +152,8 @@ void Trie::prompt(const std::string &word, const int prompt_num,
         dict.emplace_front(min_heap.top());
         min_heap.pop();
     }
-    auto ed_t = std::chrono::steady_clock::now();
-    std::cout << (ed_t - st_t).count() / 1000000.0 << "ms\n";
+    // auto ed_t = std::chrono::steady_clock::now();
+    // std::cout << (ed_t - st_t).count() / 1000000.0 << "ms\n";
 }
 
 void Trie::traverse(const TrieNode *cur, std::string &word,

@@ -42,7 +42,7 @@ pthread_mutex_t g_mutex_for_stat;
 const int kStatInterval = 3000; // 3s
 static bool g_is_stopped = false;
 
-const char *ip = "127.0.0.1";
+const char *ip = "9.135.34.93";
 int port = 6789;
 
 bool doRequest(const char *ip, int port, const string &query) {
@@ -101,7 +101,7 @@ void *StatThread(void *arg) {
 
     while (!g_is_stopped) {
         auto end_time = chrono::steady_clock::now();
-        long timediff = (end_time - start_time).count();
+        long timediff = (end_time - start_time).count() / 1000000L;
 
         // 时间间隔
         if (timediff >= kStatInterval) {

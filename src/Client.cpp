@@ -29,7 +29,7 @@ Client::Client(const char *ip, int port) {
         exit(-1);
     }
 
-    std::cout << "客户端运行中\n";
+    // std::cout << "客户端运行中\n";
 }
 
 Client::~Client() {

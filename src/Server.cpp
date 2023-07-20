@@ -177,7 +177,8 @@ class Server final {
         // 数据交互
         char buffer[2048];
         int ret;
-        while (true) {
+        do {
+            // while (true) {
             // 从客户端接收数据
             memset(buffer, 0, sizeof(buffer));
             ret = recv(fd, buffer, sizeof(buffer), 0);
@@ -227,7 +228,7 @@ class Server final {
 
             // 向客户端发送数据
             memset(buffer, 0, sizeof(buffer));
-            strncpy(buffer, tmp_str.c_str(), tmp_str.length() + 1);
+            strcpy(buffer, tmp_str.c_str());
             ret = send(fd, buffer, strlen(buffer), 0);
             if (ret < 0) {
                 std::cerr << "发送失败\n";
@@ -237,7 +238,8 @@ class Server final {
                 // inet_ntoa(addr.sin_addr)
                 //           << " 发送内容：" << buffer << "\n";
             }
-        }
+            // }
+        } while (false);
 
         // 关闭连接
         close(fd);
