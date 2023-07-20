@@ -205,7 +205,7 @@ class Server final {
 
             // 搜索trie
             // auto st_t = std::chrono::system_clock::now();
-            trie.prompt(tmp_str, promptNum, dict, millisecondLimit);
+            // trie.prompt(tmp_str, promptNum, dict, millisecondLimit);
             // auto ed_t = std::chrono::system_clock::now();
 
             // std::chrono::duration<double, std::milli> inv_t = ed_t - st_t;

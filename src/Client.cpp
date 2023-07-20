@@ -94,7 +94,8 @@ bool Client::doRequest(const std::string &query) {
 //     auto params = Utility::loadConfig();
 
 //     Client client(params["ip"].c_str(), stoi(params["port"]));
-//     client.communicate();
+//     // client.communicate();
+//     std::cout << client.doRequest("周杰伦");
 
 //     return 0;
 // }
