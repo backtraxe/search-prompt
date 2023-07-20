@@ -13,12 +13,14 @@
 
 using namespace std;
 
+// 请求信息
 struct RequestParam {
     vector<string> *query_list;
-    int replay_num;
-    int thread_no; // 线程的编号
+    int replay_num; // 线程请求次数
+    int thread_no;  // 线程的编号
 };
 
+// 统计信息
 struct StatInfo {
     int req_cnt;
     int rsp_succ_cnt;
@@ -26,6 +28,7 @@ struct StatInfo {
     int timecost_ms;
 };
 
+// 自定义参数
 struct ProcessArgs {
     int thread_num;
     uint32_t request_cnt;
@@ -35,15 +38,18 @@ struct ProcessArgs {
 
 StatInfo g_stat_info;
 
-pthread_mutex_t g_mutex_for_queue;
+// 互斥锁
 pthread_mutex_t g_mutex_for_stat;
 
 // 统计时间间隔
 const int kStatInterval = 3000; // 3s
+
 static bool g_is_stopped = false;
 
 const char *ip = "9.135.34.93";
 int port = 6789;
+
+void sig_handler(int sig) { g_is_stopped = true; }
 
 bool doRequest(const char *ip, int port, const string &query) {
     Client client(ip, port);
@@ -101,7 +107,7 @@ void *StatThread(void *arg) {
 
     while (!g_is_stopped) {
         auto end_time = chrono::steady_clock::now();
-        long timediff = (end_time - start_time).count() / 1000000L;
+        int timediff = (end_time - start_time).count() / 1000000;
 
         // 时间间隔
         if (timediff >= kStatInterval) {
@@ -133,6 +139,12 @@ void *StatThread(void *arg) {
 
 int main(int argc, char **argv) {
     int ret = 0;
+
+    struct sigaction act;
+    sigemptyset(&act.sa_mask);
+    act.sa_handler = sig_handler;
+    act.sa_flags = 0;
+    sigaction(SIGINT, &act, NULL);
 
     // 参数解析
     ProcessArgs process_args;

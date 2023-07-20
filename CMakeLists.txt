@@ -5,6 +5,7 @@ include(CTest)
 enable_testing()
 
 # add_executable(search-prompt src/Utility.cpp src/Client.cpp test/stresstest.cpp)
+# add_executable(search-prompt src/Utility.cpp src/Client.cpp)
 add_executable(search-prompt src/ThreadPool.cpp src/TrieBase.cpp src/Utility.cpp src/Server.cpp)
 
 set(CMAKE_CXX_STANDARD 11)

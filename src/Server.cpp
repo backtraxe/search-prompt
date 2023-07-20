@@ -134,6 +134,22 @@ class Server final {
 
     ~Server() { close(listenFd); }
 
+    // void buildTrie(const char *filePath) {
+    //     auto st_t = std::chrono
+    //     std::vector<std::pair<std::string, double>> dict;
+    //     // 导入数据
+    //     Utility::loadData2("data" + std::to_string(i), dict);
+    //     // 插入前排序
+    //     sort(dict.begin(), dict.end());
+    //     for (auto &p : dict) {
+    //         // 插入 trie
+    //         trie.insert(p.first, p.second);
+    //     }
+    //     auto ed_t = clock();
+    //     std::cout << "插入数据耗时："
+    //               << ((double)ed_t - st_t) / CLOCKS_PER_SEC << "s\n";
+    // }
+
     /**
      * @brief
      *
@@ -205,7 +221,7 @@ class Server final {
 
             // 搜索trie
             // auto st_t = std::chrono::system_clock::now();
-            // trie.prompt(tmp_str, promptNum, dict, millisecondLimit);
+            trie.prompt(tmp_str, promptNum, dict, millisecondLimit);
             // auto ed_t = std::chrono::system_clock::now();
 
             // std::chrono::duration<double, std::milli> inv_t = ed_t - st_t;

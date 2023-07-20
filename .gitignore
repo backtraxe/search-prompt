@@ -9,6 +9,7 @@ config.conf
 client
 server
 trieTest
+stresstest
 
 # 数据文件
 data.json
