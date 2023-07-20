@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <arpa/inet.h>
 #include <chrono>
 #include <condition_variable>
@@ -100,6 +101,7 @@ class Server final {
             auto st_t = clock();
             std::vector<std::pair<std::string, double>> dict;
             Utility::loadData2("data" + std::to_string(i), dict);
+            // 插入前排序
             sort(dict.begin(), dict.end());
             for (auto &p : dict) {
                 trie.insert(p.first, p.second);
