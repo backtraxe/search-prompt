@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <sys/select.h>
 #include <unistd.h>
+#include <vector>
 
 #include "../src/Client.hpp"
 
@@ -169,7 +170,7 @@ int main(int argc, char **argv) {
     int thread_num = process_args.thread_num;
     vector<RequestParam> param_list(thread_num);
 
-    for (size_t i = 0; i < thread_num; ++i) {
+    for (int i = 0; i < thread_num; ++i) {
         RequestParam &param = param_list[i];
         param.query_list = &query_list;
         param.replay_num = process_args.request_cnt;
